@@ -2,6 +2,8 @@
 
 **Evidence-first AI change control for lakehouse pipelines, built entirely on Cloudflare.**
 
+**[Open the live application](https://breakwater-data-agent.js32096.workers.dev)**
+
 Breakwater reviews proposed analytical-data changes against schema contracts, lineage, profile controls, and governance policy. It explains risks with evidence, learns explicit organization rules, and coordinates a durable, human-approved rollout.
 
 > This repository is an optional assignment for Cloudflare's Principal Software Engineer, Data role. It is a focused control-plane prototype, not a generic data chatbot.
@@ -101,6 +103,12 @@ npm test             # deterministic golden set
 npm run check        # formatting, lint, types, and tests
 npm run deploy -- --dry-run
 npm run deploy
+```
+
+To restore the official project-local Cloudflare skills used by OpenCode:
+
+```bash
+npx -y skills experimental_install
 ```
 
 ## Evaluation

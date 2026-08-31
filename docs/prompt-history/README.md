@@ -11,10 +11,11 @@ AI-assisted development is encouraged by the assignment. This directory preserve
 
 ## Entries
 
-| Entry                                                | Purpose                                                 |
-| ---------------------------------------------------- | ------------------------------------------------------- |
-| [`001-product-planning.md`](001-product-planning.md) | Select a role-specific product and architecture         |
-| [`002-implementation.md`](002-implementation.md)     | Execute the plan and capture implementation constraints |
+| Entry                                                            | Purpose                                                 |
+| ---------------------------------------------------------------- | ------------------------------------------------------- |
+| [`001-product-planning.md`](001-product-planning.md)             | Select a role-specific product and architecture         |
+| [`002-implementation.md`](002-implementation.md)                 | Execute the plan and capture implementation constraints |
+| [`003-cloudflare-agent-setup.md`](003-cloudflare-agent-setup.md) | Install official Cloudflare skills and MCP integrations |
 
 ## Disclosure Boundary
 
