@@ -760,8 +760,6 @@ pre {
   display: flex;
   flex-direction: column;
   height: 520px;
-  position: sticky;
-  top: 78px;
 }
 .chat-heading {
   flex-shrink: 0;
@@ -777,7 +775,10 @@ pre {
 }
 .messages {
   flex: 1;
+  min-height: 0;
   overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
   padding: 13px;
   display: flex;
   flex-direction: column;
@@ -821,6 +822,7 @@ pre {
 }
 .message {
   max-width: 92%;
+  min-width: 0;
 }
 .message-user {
   align-self: flex-end;
@@ -841,6 +843,7 @@ pre {
 }
 .message-text {
   white-space: pre-wrap;
+  overflow-wrap: anywhere;
   background: var(--soft);
   border: 1px solid var(--line-soft);
   border-radius: 4px 9px 9px 9px;

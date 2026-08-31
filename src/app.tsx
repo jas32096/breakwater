@@ -173,7 +173,7 @@ function ChatPanel({
   connected: boolean;
 }) {
   const [input, setInput] = useState("");
-  const messagesEnd = useRef<HTMLDivElement>(null);
+  const messagesRef = useRef<HTMLDivElement>(null);
   const { messages, sendMessage, addToolApprovalResponse, status, stop } =
     useAgentChat({
       agent,
@@ -182,7 +182,8 @@ function ChatPanel({
   const isStreaming = status === "streaming" || status === "submitted";
 
   useEffect(() => {
-    messagesEnd.current?.scrollIntoView({ behavior: "smooth" });
+    const container = messagesRef.current;
+    container?.scrollTo({ top: container.scrollHeight, behavior: "smooth" });
   }, [messages]);
 
   function send(text = input) {
@@ -203,7 +204,7 @@ function ChatPanel({
           <i /> {connected ? "live" : "connecting"}
         </span>
       </div>
-      <div className="messages">
+      <div className="messages" ref={messagesRef}>
         {messages.length === 0 && (
           <div className="empty-chat">
             <RobotIcon size={28} />
@@ -256,7 +257,6 @@ function ChatPanel({
             })}
           </div>
         ))}
-        <div ref={messagesEnd} />
       </div>
       <form
         className="chat-input"
