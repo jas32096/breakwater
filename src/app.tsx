@@ -38,7 +38,7 @@ const EMPTY_STATE: BreakwaterState = {
 };
 
 function sessionName() {
-  const key = "breakwater-session";
+  const key = "breakwater-session-v2";
   const existing = localStorage.getItem(key);
   if (existing) return existing;
   const created = `review-${crypto.randomUUID()}`;
@@ -149,9 +149,11 @@ function ToolPart({
   }
 
   if (part.state === "output-error" || part.state === "output-denied") {
+    const errorText = "errorText" in part ? part.errorText : undefined;
     return (
       <div className="tool-call tool-error">
         <XCircleIcon weight="fill" /> {name} did not complete
+        {errorText && <code>{errorText}</code>}
       </div>
     );
   }
@@ -582,7 +584,7 @@ export default function App() {
         </div>
         <div className="runtime-badges">
           <span>
-            <SparkleIcon weight="fill" /> Llama 3.3 · Workers AI
+            <SparkleIcon weight="fill" /> Llama 4 Scout · Workers AI
           </span>
           <span>
             <DatabaseIcon weight="fill" /> Durable state

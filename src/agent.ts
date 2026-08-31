@@ -4,9 +4,11 @@ import { createWorkersAI } from "workers-ai-provider";
 import {
   convertToModelMessages,
   pruneMessages,
+  simulateStreamingMiddleware,
   stepCountIs,
   streamText,
-  tool
+  tool,
+  wrapLanguageModel
 } from "ai";
 import { z } from "zod";
 import { getScenario, SCENARIOS } from "./domain/fixtures";
@@ -22,7 +24,7 @@ import type {
   RolloutProgress
 } from "./domain/types";
 
-const MODEL = "@cf/meta/llama-3.3-70b-instruct-fp8-fast";
+const MODEL = "@cf/meta/llama-4-scout-17b-16e-instruct";
 
 const initialState: BreakwaterState = {
   selectedScenarioId: "billing-v42",
@@ -428,15 +430,28 @@ export class BreakwaterAgent extends AIChatAgent<Env, BreakwaterState> {
   async onChatMessage(_onFinish: unknown, options?: OnChatMessageOptions) {
     const workersai = createWorkersAI({ binding: this.env.AI });
     const scenarioId = this.state.selectedScenarioId;
+    const latestUserText = [...this.messages]
+      .reverse()
+      .find((message) => message.role === "user")
+      ?.parts.filter((part) => part.type === "text")
+      .map((part) => part.text)
+      .join(" ");
+    const reviewRequested = /\b(review|safe|ship|evaluate|controls?)\b/i.test(
+      latestUserText ?? ""
+    );
 
     const result = streamText({
-      model: workersai(MODEL, { sessionAffinity: this.sessionAffinity }),
+      model: wrapLanguageModel({
+        model: workersai(MODEL, { sessionAffinity: this.sessionAffinity }),
+        // Workers AI currently returns both native and OpenAI SSE text fields.
+        middleware: simulateStreamingMiddleware()
+      }),
       system: `You are Breakwater, an evidence-first change-control agent for analytical data platforms.
 
 The active change is ${scenarioId}. Your job is to help a data engineer determine whether it is safe to ship.
 
 Rules:
-- Inspect the catalog and evaluate the change before drawing conclusions.
+- Evaluate the active change before drawing conclusions. Inspect the catalog when additional context is useful.
 - Treat tool output as the only source of facts. Never invent schemas, metrics, lineage, or policies.
 - Cite evidence identifiers in square brackets for every concrete risk claim.
 - Keep the response concise: decision, highest-risk findings, and safe next action.
@@ -454,14 +469,10 @@ Available scenarios: ${SCENARIOS.map((scenario) => `${scenario.id} (${scenario.t
       tools: {
         inspectCatalog: tool({
           description:
-            "Inspect the current and proposed schema, lineage, profile controls, and stored organization policies for a change.",
-          inputSchema: z.object({
-            scenarioId: z
-              .enum(["billing-v42", "support-token-export"])
-              .default(scenarioId as "billing-v42" | "support-token-export")
-          }),
-          execute: async ({ scenarioId: requestedId }) => {
-            const scenario = getScenario(requestedId);
+            "Inspect the current and proposed schema, lineage, profile controls, and stored organization policies for the active change.",
+          inputSchema: z.object({}),
+          execute: async () => {
+            const scenario = getScenario(scenarioId);
             return {
               scenarioId: scenario.id,
               current: scenario.current,
@@ -474,14 +485,9 @@ Available scenarios: ${SCENARIOS.map((scenario) => `${scenario.id} (${scenario.t
         }),
         evaluateChange: tool({
           description:
-            "Run deterministic contract, governance, transitive-lineage, quality, and learned-policy controls. Returns the authoritative review and evidence IDs.",
-          inputSchema: z.object({
-            scenarioId: z
-              .enum(["billing-v42", "support-token-export"])
-              .default(scenarioId as "billing-v42" | "support-token-export")
-          }),
-          execute: async ({ scenarioId: requestedId }) =>
-            this.runReview(requestedId)
+            "Run deterministic contract, governance, transitive-lineage, quality, and learned-policy controls for the active change. Returns the authoritative review and evidence IDs.",
+          inputSchema: z.object({}),
+          execute: async () => this.runReview(scenarioId)
         }),
         rememberPolicy: tool({
           description:
@@ -497,6 +503,18 @@ Available scenarios: ${SCENARIOS.map((scenario) => `${scenario.id} (${scenario.t
         })
       },
       stopWhen: stepCountIs(6),
+      prepareStep: reviewRequested
+        ? ({ stepNumber }) =>
+            stepNumber === 0
+              ? {
+                  activeTools: ["evaluateChange"],
+                  toolChoice: {
+                    type: "tool" as const,
+                    toolName: "evaluateChange" as const
+                  }
+                }
+              : { toolChoice: "none" as const }
+        : undefined,
       temperature: 0.2,
       abortSignal: options?.abortSignal
     });
