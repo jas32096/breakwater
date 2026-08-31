@@ -134,7 +134,19 @@ export class BreakwaterAgent extends AIChatAgent<Env, BreakwaterState> {
     return event;
   }
 
+  private hasActiveWorkflow() {
+    return Boolean(
+      this.state.workflow &&
+      ["deploying", "awaiting_approval"].includes(this.state.workflow.status)
+    );
+  }
+
   private runReview(scenarioId: string): ReviewResult {
+    if (this.hasActiveWorkflow()) {
+      throw new Error(
+        "Resolve the active rollout before running another review"
+      );
+    }
     getScenario(scenarioId);
     this.setState({
       ...this.state,
@@ -169,6 +181,9 @@ export class BreakwaterAgent extends AIChatAgent<Env, BreakwaterState> {
 
   @callable()
   async selectScenario(scenarioId: string) {
+    if (this.hasActiveWorkflow()) {
+      throw new Error("Resolve the active rollout before changing scenarios");
+    }
     getScenario(scenarioId);
     this.setState({
       ...this.state,
@@ -190,6 +205,9 @@ export class BreakwaterAgent extends AIChatAgent<Env, BreakwaterState> {
     classification: "pii" | "secret",
     instruction: string
   ) {
+    if (this.hasActiveWorkflow()) {
+      throw new Error("Resolve the active rollout before changing policy");
+    }
     const parsed = z
       .object({
         pattern: z
@@ -217,6 +235,9 @@ export class BreakwaterAgent extends AIChatAgent<Env, BreakwaterState> {
     );
     this.setState({
       ...this.state,
+      status: "idle",
+      review: null,
+      workflow: null,
       memories: this.readMemories(),
       recentAudit: this.readAudit()
     });
@@ -225,10 +246,16 @@ export class BreakwaterAgent extends AIChatAgent<Env, BreakwaterState> {
 
   @callable()
   async deletePolicy(memoryId: string) {
+    if (this.hasActiveWorkflow()) {
+      throw new Error("Resolve the active rollout before changing policy");
+    }
     this.sql`DELETE FROM policy_memories WHERE id = ${memoryId}`;
     this.appendAudit("memory.deleted", memoryId, "reviewer");
     this.setState({
       ...this.state,
+      status: "idle",
+      review: null,
+      workflow: null,
       memories: this.readMemories(),
       recentAudit: this.readAudit()
     });

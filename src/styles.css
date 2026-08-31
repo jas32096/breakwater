@@ -338,6 +338,30 @@ pre {
   margin-left: 10px;
   color: var(--line);
 }
+.error-banner {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin: -10px 0 18px;
+  padding: 10px 12px;
+  color: #ffd3da;
+  background: #211219;
+  border: 1px solid #63303a;
+  border-radius: 7px;
+  font-size: 10px;
+}
+.error-banner svg {
+  width: 16px;
+  height: 16px;
+  color: var(--red);
+}
+.error-banner button {
+  margin-left: auto;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+}
 .button {
   border: 1px solid var(--line);
   border-radius: 7px;

@@ -491,9 +491,39 @@ function WorkflowPanel({
   );
 }
 
+function AuditPanel({ events }: { events: BreakwaterState["recentAudit"] }) {
+  return (
+    <section className="panel audit-panel">
+      <div className="panel-heading">
+        <div>
+          <span className="eyebrow">Append-only record</span>
+          <h2>Audit trail</h2>
+        </div>
+      </div>
+      {events.length === 0 ? (
+        <p className="audit-empty">Actions will be recorded here.</p>
+      ) : (
+        <div className="audit-list">
+          {events.map((event) => (
+            <div className="audit-event" key={event.id}>
+              <i />
+              <div>
+                <strong>{event.action}</strong>
+                <p>{event.detail}</p>
+              </div>
+              <time>{new Date(event.createdAt).toLocaleTimeString()}</time>
+            </div>
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
+
 export default function App() {
   const [connected, setConnected] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [actionError, setActionError] = useState<string | null>(null);
   const [tab, setTab] = useState<"change" | "evidence" | "operations">(
     "change"
   );
@@ -513,10 +543,16 @@ export default function App() {
 
   async function perform(action: () => Promise<unknown>) {
     setBusy(true);
+    setActionError(null);
     try {
       await action();
     } catch (error) {
       console.error(error);
+      setActionError(
+        error instanceof Error
+          ? error.message
+          : "The operation did not complete."
+      );
     } finally {
       setBusy(false);
     }
@@ -565,7 +601,11 @@ export default function App() {
               key={item.id}
               className={`scenario-button ${item.id === scenario.id ? "active" : ""}`}
               onClick={() => perform(() => agent.stub.selectScenario(item.id))}
-              disabled={busy}
+              disabled={
+                busy ||
+                state.status === "deploying" ||
+                state.status === "awaiting_approval"
+              }
             >
               <span className="scenario-icon">
                 {item.id === "billing-v42" ? <DatabaseIcon /> : <LockKeyIcon />}
@@ -638,6 +678,19 @@ export default function App() {
             Run controls
           </button>
         </section>
+
+        {actionError && (
+          <div className="error-banner" role="alert">
+            <WarningCircleIcon weight="fill" />
+            <span>{actionError}</span>
+            <button
+              onClick={() => setActionError(null)}
+              aria-label="Dismiss error"
+            >
+              ×
+            </button>
+          </div>
+        )}
 
         <nav className="mobile-tabs">
           {(["change", "evidence", "operations"] as const).map((item) => (
@@ -737,37 +790,13 @@ export default function App() {
             </section>
             <div className="operations-view">
               <WorkflowPanel state={state} busy={busy} {...workflowActions} />
-              <section className="panel audit-panel">
-                <div className="panel-heading">
-                  <div>
-                    <span className="eyebrow">Append-only record</span>
-                    <h2>Audit trail</h2>
-                  </div>
-                </div>
-                {state.recentAudit.length === 0 ? (
-                  <p className="audit-empty">Actions will be recorded here.</p>
-                ) : (
-                  <div className="audit-list">
-                    {state.recentAudit.map((event) => (
-                      <div className="audit-event" key={event.id}>
-                        <i />
-                        <div>
-                          <strong>{event.action}</strong>
-                          <p>{event.detail}</p>
-                        </div>
-                        <time>
-                          {new Date(event.createdAt).toLocaleTimeString()}
-                        </time>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </section>
+              <AuditPanel events={state.recentAudit} />
             </div>
           </div>
           <div className="right-column">
             <ChatPanel agent={agent} connected={connected} />
             <WorkflowPanel state={state} busy={busy} {...workflowActions} />
+            <AuditPanel events={state.recentAudit} />
           </div>
         </div>
       </main>
