@@ -68,7 +68,15 @@ export function evaluateScenario(
   memories: PolicyMemory[] = [],
   now = new Date()
 ): ReviewResult {
-  const scenario = getScenario(scenarioId);
+  return evaluateChange(getScenario(scenarioId), memories, now);
+}
+
+export function evaluateChange(
+  scenario: ChangeScenario,
+  memories: PolicyMemory[] = [],
+  now = new Date()
+): ReviewResult {
+  const scenarioId = scenario.id;
   const evidence: Evidence[] = [];
   const findings: Finding[] = [];
   const impactedAssetIds = downstreamAssets(scenario);
