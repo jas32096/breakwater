@@ -44,14 +44,16 @@ The remaining tests cover wildcard behavior and authoritative evidence linkage a
 - The safe additive case protects against a system that blocks every change.
 - Fixed timestamps keep serialized review tests deterministic.
 
-## Model Evaluation Gap
+## Live Model Verification
 
-The live model narrative still needs a small recorded evaluation after Cloudflare deployment. The proposed checks are:
+Run against the production Worker on August 31, 2026:
 
-- Every concrete risk statement includes a valid evidence ID.
-- No response claims publication before Workflow completion.
-- A simple review completes within six tool steps.
-- The model does not call `rememberPolicy` without an explicit user instruction.
-- A rejected memory tool call leaves policy state unchanged.
+- The Agent WebSocket connected and synchronized initial state.
+- `evaluateChange` reached `output-available` and returned the authoritative blocked decision with three findings.
+- The final narrative cited known contract, governance, quality, and lineage evidence IDs.
+- The persisted narrative contained no duplicated streaming tokens.
+- A Chromium browser retained document scroll position during chat updates.
+- Desktop and mobile chat panes scrolled internally while keeping the input contained.
+- The chat, rollout, and audit panels did not overlap after document scrolling.
 
-These should be run against the deployed Llama 3.3 binding and recorded without converting model output into a policy authority.
+These checks exercise the deployed Llama 4 Scout binding without converting model output into a policy authority. Deterministic tests remain the source of truth for review decisions.

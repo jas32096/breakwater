@@ -30,7 +30,7 @@ It complements a natural-language data agent such as Cloudflare's Skipper rather
 ```mermaid
 flowchart LR
   UI[React operations console] <-->|WebSocket| A[Breakwater AIChatAgent]
-  A --> L[Workers AI<br/>Llama 3.3 70B]
+  A --> L[Workers AI<br/>Llama 4 Scout]
   A --> C[Deterministic controls]
   A <--> S[Durable Object SQLite<br/>messages, memory, audit]
   A --> W[Cloudflare Workflow]
@@ -42,7 +42,7 @@ flowchart LR
 
 | Assignment component    | Breakwater implementation                                                                                     |
 | ----------------------- | ------------------------------------------------------------------------------------------------------------- |
-| LLM                     | `@cf/meta/llama-3.3-70b-instruct-fp8-fast` on Workers AI                                                      |
+| LLM                     | `@cf/meta/llama-4-scout-17b-16e-instruct` on Workers AI                                                       |
 | Workflow / coordination | `AgentWorkflow` with durable steps, retries, progress, and a seven-day approval gate                          |
 | User input              | Streaming chat and structured review controls over Agents SDK WebSockets                                      |
 | Memory / state          | Per-session Durable Object SQLite for chat, typed policy memory, reviews, Workflow tracking, and audit events |
@@ -96,6 +96,8 @@ npm run dev
 
 Workers AI has no local simulator, so development uses Cloudflare's remote binding. No OpenAI or Anthropic key is required.
 
+The AI SDK converts complete Workers AI steps into the UI message stream. This preserves WebSocket tool activity and approvals while avoiding duplicate deltas from Workers AI responses that contain both native and OpenAI-compatible SSE text fields.
+
 Useful commands:
 
 ```bash
@@ -124,7 +126,17 @@ The deterministic suite currently contains 12 passing tests. The golden set cove
 - Learned wildcard policy
 - Invalid or hallucinated evidence references
 
-Full methodology and current gaps are in [`docs/evaluation.md`](docs/evaluation.md).
+Full methodology and production verification results are in [`docs/evaluation.md`](docs/evaluation.md).
+
+### Live Verification
+
+The deployed application is also exercised through its production Agent WebSocket and a real Chromium browser:
+
+- `evaluateChange` completes with an authoritative blocked decision and three findings.
+- The model cites valid contract, governance, quality, and lineage evidence IDs.
+- The persisted response contains clean prose without duplicate streaming tokens.
+- Desktop and mobile browser checks confirm bounded chat scrolling, no document jump, and no overlap with rollout controls.
+- GitHub runs the full sanity check, dependency audit, and Semgrep scan on every push.
 
 ## Repository Layout
 

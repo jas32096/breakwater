@@ -16,7 +16,7 @@ The Worker serves a responsive React application. Each browser receives a stable
 
 `BreakwaterAgent` extends `AIChatAgent<Env, BreakwaterState>`. It owns:
 
-- Streaming Llama 3.3 chat
+- Llama 4 Scout chat over a WebSocket UI message stream
 - Three narrow model tools
 - Per-session durable identity
 - Typed state synchronized to connected clients
@@ -41,7 +41,7 @@ Every finding has a severity, evidence IDs, affected assets, and remediation. A 
 
 ### Workers AI
 
-The chat uses `@cf/meta/llama-3.3-70b-instruct-fp8-fast`, with low temperature, bounded tool steps, pruned history, and session affinity. The model explains authoritative tool output and may propose next actions. It cannot directly publish or bypass deterministic controls.
+The chat uses `@cf/meta/llama-4-scout-17b-16e-instruct`, with low temperature, bounded tool steps, pruned history, and session affinity. Review requests force the authoritative evaluation tool before the explanatory step. AI SDK simulated-streaming middleware converts complete Workers AI steps into the UI message stream, avoiding duplicate deltas when a provider response exposes both native and OpenAI-compatible SSE fields. The model may explain tool output and propose next actions, but it cannot directly publish or bypass deterministic controls.
 
 ### Rollout Workflow
 
